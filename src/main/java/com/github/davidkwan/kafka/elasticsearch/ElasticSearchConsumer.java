@@ -2,6 +2,7 @@ package com.github.davidkwan.kafka.elasticsearch;
 
 import com.github.davidkwan.kafka.consumer.Consumer;
 import com.github.davidkwan.kafka.httpclient.HttpRestClient;
+import com.google.gson.JsonParser;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
@@ -18,6 +19,8 @@ import java.time.Duration;
 
 public class ElasticSearchConsumer {
 
+    private  static JsonParser jsonParser = new JsonParser();
+
     public static void main(String[] args) {
         Logger logger = LoggerFactory.getLogger(ElasticSearchConsumer.class.getName());
 
@@ -31,17 +34,23 @@ public class ElasticSearchConsumer {
                 ConsumerRecords<String, String> records = consumer.poll(Duration.ofMillis(100));
 
                 for (ConsumerRecord<String, String> record : records) {
-                    record.value();
 
+                    // kafka generic id
+                    // String id = record.topic() + "_" + record.partition() + "_" + record.offset();
+
+                    // twitter feed specific id
+                    String id = getJsonPropertyValue(record.value(), "id_str");
+
+                    // create idempotent request to prevent duplicate data
                     IndexRequest indexRequest = new IndexRequest(
                             "twitter",
-                            "tweets"
+                            "tweets",
+                            id
                     ).source(record.value(), XContentType.JSON);
 
                     IndexResponse indexResponse = client.index(indexRequest, RequestOptions.DEFAULT);
 
-                    String id = indexResponse.getId();
-                    logger.info(id);
+                    logger.info(indexResponse.getId());
                 }
             }
         } catch (IOException e) {
@@ -49,4 +58,12 @@ public class ElasticSearchConsumer {
         }
 
     }
+
+    private static String getJsonPropertyValue(String json, String property) {
+        return jsonParser.parse(json)
+                .getAsJsonObject()
+                .get(property)
+                .getAsString();
+    }
+
 }
