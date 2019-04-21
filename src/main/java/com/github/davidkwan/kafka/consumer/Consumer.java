@@ -9,11 +9,13 @@ import java.util.Properties;
 
 public class Consumer {
 
-    private String bootstrapServers = "127.0.0.1:9092";
-    private String grounpId = "consumer-elasticsearch";
     private String topic;
 
+    private final String bootstrapServers = "127.0.0.1:9092";
+    private final String grounpId = "consumer-elasticsearch";
+    private final String enableAutoCommitConfig = "false";
     private final String autoOffsetResetConfig = "earliest";
+    private final String maxPollRecordsConfig = "100";
 
     public Consumer(String topic) {
         this.topic = topic;
@@ -26,6 +28,8 @@ public class Consumer {
         properties.setProperty(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
         properties.setProperty(ConsumerConfig.GROUP_ID_CONFIG, grounpId);
         properties.setProperty(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, autoOffsetResetConfig);
+        properties.setProperty(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, enableAutoCommitConfig);
+        properties.setProperty(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, maxPollRecordsConfig);
 
         KafkaConsumer<String, String> consumer = new KafkaConsumer<String, String>(properties);
 
